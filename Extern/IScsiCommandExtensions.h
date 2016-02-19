@@ -26,9 +26,8 @@ limitations under the License.
 
 namespace vtStor
 {
-    class VT_STOR_SCSI_API IScsiCommandExtensions
+    struct IScsiCommandExtensions
     {
-    public:
         virtual ~IScsiCommandExtensions() {}
         virtual eErrorCode IssueCommand_AtaIdentifyDevice(std::shared_ptr<IDrive> Drive, U32 CommandType, std::shared_ptr<IBuffer> Data) = 0;
         virtual eErrorCode IssueCommand_AtaReadDma(std::shared_ptr<IDrive> Drive, U32 CommandType, std::shared_ptr<IBuffer> Data, U32 Lba, U16 Count) = 0;
@@ -51,6 +50,6 @@ extern "C"
     VT_STOR_SCSI_API void cScsiCommandExtensions_GetScsiCommandExtensions(std::unique_ptr<vtStor::IScsiCommandExtensions>& AtaCommandExtensions);
 }
 
-typedef void (OS_API * GetScsiCommandExtensionsDelegate) (std::unique_ptr<vtStor::IScsiCommandExtensions>&);
+typedef void (WINAPIV * GetScsiCommandExtensionsDelegate) (std::unique_ptr<vtStor::IScsiCommandExtensions>&);
 
 #endif // end __vtStorIScsiCommandExtensions_h__

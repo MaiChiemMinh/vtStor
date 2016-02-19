@@ -1,6 +1,6 @@
 /*
 <License>
-Copyright 2016 Virtium Technology
+Copyright 2015 Virtium Technology
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ limitations under the License.
 #include <memory>
 #include <scsi/sg.h>
 
+#include "BufferInterface.h"
 #include "ErrorCodes.h"
-#include "IBuffer.h"
-#include "IProtocol.h"
+#include "ProtocolInterface.h"
 #include "Scsi.h"
+#include "vtStorScsiProtocolPlatformDefines.h"
 
 namespace vtStor
 {
@@ -37,17 +38,17 @@ enum class eSgScsi
     MaxSenseDataLength              = 32,   // Max of Sense Data Length
 };
 
-class VT_STOR_SCSI_PROTOCOL_API cScsiPassThrough : public IProtocol
+class VT_STOR_SCSI_PROTOCOL_API cScsiPassThrough : public cProtocolInterface
 {
 
 public:
-    virtual eErrorCode IssueCommand(const DeviceHandle& Handle, std::shared_ptr<const IBuffer> Essense, std::shared_ptr<IBuffer> DataBuffer) override;
+    virtual eErrorCode IssueCommand(const DeviceHandle& Handle, std::shared_ptr<const cBufferInterface> Essense, std::shared_ptr<cBufferInterface> DataBuffer) override;
 
 private:
     void InitializePassThroughDirect(
             const StorageUtility::Scsi::sCommandCharacteristics& CommandCharacteristics,
             const StorageUtility::Scsi::sCdbRegisters& CdbRegister,
-            std::shared_ptr<IBuffer> DataBuffer,
+            std::shared_ptr<cBufferInterface> DataBuffer,
             U32 TimeoutValueInSeconds
             );
 
@@ -63,4 +64,9 @@ private:
 };
 
 }
+}
+
+extern "C"
+{
+    VT_STOR_SCSI_PROTOCOL_API void vtStorProtocolAtaPassThroughInit(std::shared_ptr<vtStor::Protocol::cProtocolInterface>& Protocol);
 }

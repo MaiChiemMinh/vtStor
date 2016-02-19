@@ -26,9 +26,8 @@ limitations under the License.
 
 namespace vtStor
 {
-    class VTSTOR_API IDriveEnumerator
+    struct IDriveEnumerator
     {
-    public:
         virtual ~IDriveEnumerator() {}
         virtual std::shared_ptr<IDrive> EnumerateDrive(const std::shared_ptr<IDevice>& Device) = 0;
     };
@@ -40,6 +39,6 @@ extern "C"
     VT_STOR_SCSI_API void cDriveEnumeratorScsi_GetDriveEnumerator(std::shared_ptr<vtStor::IDriveEnumerator>& DriveEnumerator);
 }
 
-typedef void (OS_API * GetDriveEnumeratorDelegate) (std::shared_ptr<vtStor::IDriveEnumerator>&);
+typedef void (WINAPIV * GetDriveEnumeratorDelegate) (std::shared_ptr<vtStor::IDriveEnumerator>&);
 
 #endif // end __vtStorIDriveEnumerator_h__

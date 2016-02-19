@@ -23,251 +23,321 @@ limitations under the License.
 namespace vtStor
 {
 
-eErrorCode GetStorageDevices(std::vector<std::shared_ptr<IDevice>>& Devices, eOnErrorBehavior OnErrorBehavior)
-{
-    eErrorCode error = eErrorCode::None;
-
-    sEnumerateDevicesCallback callBack;
-    callBack.Data = (void*)&Devices;
-    callBack.Function = [](void* Data, const HDEVINFO& DevInfoHandle, SP_DEVINFO_DATA& DevInfoData, SP_DEVICE_INTERFACE_DATA& DevInterfaceData, const PSP_INTERFACE_DEVICE_DETAIL_DATA& DevDetailData, U32 SizeOfDevDetailData, eErrorCode& ErrorCode)
+    eErrorCode GetStorageDevices(std::vector<std::shared_ptr<IDevice>>& Devices, eOnErrorBehavior OnErrorBehavior)
     {
-        std::vector<std::shared_ptr<vtStor::IDevice>>* devices = (std::vector<std::shared_ptr<vtStor::IDevice>>*)Data;
-        devices->push_back(std::make_shared<cDevice>((SP_DEVINFO_DATA*)&DevInfoData, (SP_DEVICE_INTERFACE_DATA*)&DevInterfaceData, DevDetailData, SizeOfDevDetailData));
-    };
+        eErrorCode error = eErrorCode::None;
 
-    error = EnumerateDevices(callBack, &GUID_DEVINTERFACE_DISK, OnErrorBehavior);
-    return(error);
-}
+        sEnumerateDevicesCallback callBack;
+        callBack.Data = (void*)&Devices;
+        callBack.Function = [](void* Data, const HDEVINFO& DevInfoHandle, SP_DEVINFO_DATA& DevInfoData, SP_DEVICE_INTERFACE_DATA& DevInterfaceData, const PSP_INTERFACE_DEVICE_DETAIL_DATA& DevDetailData, U32 SizeOfDevDetailData, eErrorCode& ErrorCode)
+        {
+            std::vector<std::shared_ptr<vtStor::IDevice>>* devices = (std::vector<std::shared_ptr<vtStor::IDevice>>*)Data;
+            devices->push_back(std::make_shared<cDevice>((SP_DEVINFO_DATA*)&DevInfoData, (SP_DEVICE_INTERFACE_DATA*)&DevInterfaceData, DevDetailData, SizeOfDevDetailData));
+        };
 
-eErrorCode GetStorageDevicePaths( std::vector<String>& Paths, eOnErrorBehavior OnErrorBehavior )
-{
-    return( GetDevicePaths( Paths, &GUID_DEVINTERFACE_DISK, OnErrorBehavior ) );
-}
+        error = EnumerateDevices(callBack, &GUID_DEVINTERFACE_DISK, OnErrorBehavior);
+        return(error);
+    }
 
-eErrorCode GetDevicePaths( std::vector<String>& Paths, const GUID* InterfaceClassGUID, eOnErrorBehavior OnErrorBehavior )
-{
-    eErrorCode error = eErrorCode::None;
-
-    sEnumerateDevicesCallback callBack;
-    callBack.Data = (void*)&Paths;
-    callBack.Function = [](void* Data, const HDEVINFO& DevInfoHandle, SP_DEVINFO_DATA& DevInfoData, SP_DEVICE_INTERFACE_DATA& DevInterfaceData, const PSP_INTERFACE_DEVICE_DETAIL_DATA& DevDetailData, U32 SizeOfDevDetailData, eErrorCode& ErrorCode)
+    eErrorCode GetStorageDevicePaths(std::vector<String>& Paths, eOnErrorBehavior OnErrorBehavior)
     {
-        std::vector<String>* paths = ( std::vector<String>* )Data;
-        paths->push_back( DevDetailData->DevicePath );
-    };
+        return(GetDevicePaths(Paths, &GUID_DEVINTERFACE_DISK, OnErrorBehavior));
+    }
 
-    error = EnumerateDevices( callBack, InterfaceClassGUID, OnErrorBehavior );
-    return( error );
-}
+    eErrorCode GetDevicePaths(std::vector<String>& Paths, const GUID* InterfaceClassGUID, eOnErrorBehavior OnErrorBehavior)
+    {
+        eErrorCode error = eErrorCode::None;
 
-eErrorCode EnumerateDevices( sEnumerateDevicesCallback& Callback, const GUID* InterfaceClassGUID, eOnErrorBehavior OnErrorBehavior )
-{
-    HDEVINFO devInfoHandle =
-        SetupDiGetClassDevs
-        (
-        InterfaceClassGUID,
-        NULL,
-        NULL,
-        DIGCF_PRESENT | DIGCF_DEVICEINTERFACE
+        sEnumerateDevicesCallback callBack;
+        callBack.Data = (void*)&Paths;
+        callBack.Function = [](void* Data, const HDEVINFO& DevInfoHandle, SP_DEVINFO_DATA& DevInfoData, SP_DEVICE_INTERFACE_DATA& DevInterfaceData, const PSP_INTERFACE_DEVICE_DETAIL_DATA& DevDetailData, U32 SizeOfDevDetailData, eErrorCode& ErrorCode)
+        {
+            std::vector<String>* paths = (std::vector<String>*)Data;
+            paths->push_back(DevDetailData->DevicePath);
+        };
+
+        error = EnumerateDevices(callBack, InterfaceClassGUID, OnErrorBehavior);
+        return(error);
+    }
+
+    eErrorCode EnumerateDevices(sEnumerateDevicesCallback& Callback, const GUID* InterfaceClassGUID, eOnErrorBehavior OnErrorBehavior)
+    {
+        HDEVINFO devInfoHandle =
+            SetupDiGetClassDevs
+            (
+                InterfaceClassGUID,
+                NULL,
+                NULL,
+                DIGCF_PRESENT | DIGCF_DEVICEINTERFACE
+                );
+        if (INVALID_HANDLE_VALUE == devInfoHandle)
+        {
+            return(eErrorCode::Unknown);
+        }
+
+        DWORD error = 0;
+        DWORD memberIndex = 0;
+        while (true == true)
+        {
+            SP_DEVICE_INTERFACE_DATA devInterfaceData;
+            devInterfaceData.cbSize = sizeof(devInterfaceData);
+            if (SetupDiEnumDeviceInterfaces(devInfoHandle, NULL, InterfaceClassGUID, memberIndex++, &devInterfaceData) == FALSE)
+            {
+                error = GetLastError();
+                if (ERROR_NO_MORE_ITEMS == error)
+                {
+                    break;
+                }
+                else
+                {
+                    SetupDiDestroyDeviceInfoList(devInfoHandle);
+                    return(eErrorCode::Unknown);
+                }
+            }
+
+            DWORD bufferSize = 0;
+            SP_DEVINFO_DATA devInfoData;
+            devInfoData.cbSize = sizeof(devInfoData);
+
+            // Get buffer size
+            if (SetupDiGetDeviceInterfaceDetail(devInfoHandle, &devInterfaceData, NULL, 0, &bufferSize, &devInfoData) == FALSE)
+            {
+                error = GetLastError();
+                if (ERROR_INSUFFICIENT_BUFFER != error)
+                {
+                    if (eOnErrorBehavior::Continue == OnErrorBehavior) { continue; }
+                    SetupDiDestroyDeviceInfoList(devInfoHandle);
+                    return(eErrorCode::Unknown);
+                }
+            }
+
+            PSP_INTERFACE_DEVICE_DETAIL_DATA pDevDetailData = (PSP_INTERFACE_DEVICE_DETAIL_DATA)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, bufferSize);
+            if (NULL == pDevDetailData)
+            {
+                if (eOnErrorBehavior::Continue == OnErrorBehavior) { continue; }
+                SetupDiDestroyDeviceInfoList(devInfoHandle);
+                return(eErrorCode::Memory);
+            }
+            pDevDetailData->cbSize = sizeof(SP_INTERFACE_DEVICE_DETAIL_DATA);
+
+            if (SetupDiGetDeviceInterfaceDetail(devInfoHandle, &devInterfaceData, pDevDetailData, bufferSize, NULL, NULL) == FALSE)
+            {
+                error = GetLastError();
+                if (ERROR_INSUFFICIENT_BUFFER != error)
+                {
+                    HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pDevDetailData);
+                    if (eOnErrorBehavior::Continue == OnErrorBehavior) { continue; }
+                    SetupDiDestroyDeviceInfoList(devInfoHandle);
+                    return(eErrorCode::Unknown);
+                }
+            }
+
+            eErrorCode errorCode;
+            errorCode = eErrorCode::Unknown;
+            Callback.Function(Callback.Data, devInfoHandle, devInfoData, devInterfaceData, pDevDetailData, bufferSize, errorCode);
+
+            HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pDevDetailData);
+        }
+
+        SetupDiDestroyDeviceInfoList(devInfoHandle);
+
+        return(eErrorCode::None);
+    }
+
+    eErrorCode GetStorageAdapterProperty(HANDLE Handle, sStorageAdapterProperty& AdapterProperty)
+    {
+        STORAGE_DESCRIPTOR_HEADER storageDescHeader;
+
+        STORAGE_PROPERTY_QUERY StorageProperty;
+        StorageProperty.PropertyId = StorageAdapterProperty;
+        StorageProperty.QueryType = PropertyStandardQuery;
+
+        DWORD bytesReturned;
+        DWORD ret =
+            DeviceIoControl(
+                Handle,
+                IOCTL_STORAGE_QUERY_PROPERTY,
+                &StorageProperty,
+                sizeof(STORAGE_PROPERTY_QUERY),
+                &storageDescHeader,
+                sizeof(STORAGE_DESCRIPTOR_HEADER),
+                &bytesReturned,
+                NULL
+                );
+        if (0 == ret)
+        {
+            return(eErrorCode::Io);
+        }
+
+        if (0 == storageDescHeader.Size)
+        {
+            return(eErrorCode::Io);   //TODO: replace with more descriptive error
+        }
+
+        STORAGE_PROTOCOL_DATA_DESCRIPTOR pstorageAdapterDesc;
+        pstorageAdapterDesc.Size = sizeof(STORAGE_PROTOCOL_DATA_DESCRIPTOR);
+        pstorageAdapterDesc.ProtocolSpecificData.ProtocolDataOffset = sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA);
+
+
+        BYTE QueryBuffer[sizeof(STORAGE_PROPERTY_QUERY) + sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA) - 1];
+        size_t sizeQuery = sizeof(STORAGE_PROPERTY_QUERY);
+        size_t sizeSData = sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA);
+        ((STORAGE_PROPERTY_QUERY*)QueryBuffer)->PropertyId = StorageAdapterProtocolSpecificProperty;
+        //((STORAGE_PROPERTY_QUERY*)QueryBuffer)->PropertyId = StorageDeviceProtocolSpecificProperty;
+        ((STORAGE_PROPERTY_QUERY*)QueryBuffer)->QueryType = PropertyStandardQuery;
+
+        BYTE* additionalParameters = (BYTE*)&QueryBuffer[sizeof(STORAGE_PROPERTY_QUERY) - 1];
+        STORAGE_PROTOCOL_DATA_DESCRIPTOR* addParam = (STORAGE_PROTOCOL_DATA_DESCRIPTOR*)additionalParameters;
+        addParam->Version = 0;
+        addParam->Size = sizeof(STORAGE_PROTOCOL_DATA_DESCRIPTOR);
+        //additionalParameters = &(pstorageAdapterDesc.ProtocolSpecificData);
+        //additionalParameters = (BYTE*)&(pstorageAdapterDesc);
+
+
+        ret =
+            DeviceIoControl(
+                Handle,
+                IOCTL_STORAGE_QUERY_PROPERTY,
+                QueryBuffer,
+                sizeof(STORAGE_PROPERTY_QUERY) + sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA) - 1,
+                &pstorageAdapterDesc,
+                sizeof(STORAGE_PROTOCOL_DATA_DESCRIPTOR),
+                &bytesReturned,
+                NULL
+                );
+        if (0 == ret)
+        {
+            DWORD lastError = GetLastError();
+            return(eErrorCode::Io);
+        }
+
+
+        /*PSTORAGE_PROTOCOL_DATA_DESCRIPTOR storageProtocolDataDesc = NULL;
+        storageProtocolDataDesc = (PSTORAGE_PROTOCOL_DATA_DESCRIPTOR)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, sizeof(PSTORAGE_PROTOCOL_DATA_DESCRIPTOR));
+*/
+/*PSTORAGE_PHYSICAL_ADAPTER_DATA pstorageAdapterDesc = NULL;
+pstorageAdapterDesc = (PSTORAGE_PHYSICAL_ADAPTER_DATA)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, storageDescHeader.Size);
+
+ret =
+    DeviceIoControl(
+        Handle,
+        IOCTL_STORAGE_QUERY_PROPERTY,
+        &StorageProperty,
+        sizeof(STORAGE_PROPERTY_QUERY),
+        pstorageAdapterDesc,
+        storageDescHeader.Size,
+        &bytesReturned,
+        NULL
         );
-    if ( INVALID_HANDLE_VALUE == devInfoHandle )
-    {
-        return( eErrorCode::Unknown );
-    }
-
-    DWORD error = 0;
-    DWORD memberIndex = 0;
-    while ( true == true )
-    {
-        SP_DEVICE_INTERFACE_DATA devInterfaceData;
-        devInterfaceData.cbSize = sizeof( devInterfaceData );
-        if ( SetupDiEnumDeviceInterfaces( devInfoHandle, NULL, InterfaceClassGUID, memberIndex++, &devInterfaceData ) == FALSE )
-        {
-            error = GetLastError();
-            if ( ERROR_NO_MORE_ITEMS == error )
-            {
-                break;
-            }
-            else
-            {
-                SetupDiDestroyDeviceInfoList( devInfoHandle );
-                return( eErrorCode::Unknown );
-            }
-        }
-
-        DWORD bufferSize = 0;
-        SP_DEVINFO_DATA devInfoData;
-        devInfoData.cbSize = sizeof( devInfoData );
-
-        // Get buffer size
-        if ( SetupDiGetDeviceInterfaceDetail( devInfoHandle, &devInterfaceData, NULL, 0, &bufferSize, &devInfoData ) == FALSE )
-        {
-            error = GetLastError();
-            if ( ERROR_INSUFFICIENT_BUFFER != error )
-            {
-                if ( eOnErrorBehavior::Continue == OnErrorBehavior ) { continue; }
-                SetupDiDestroyDeviceInfoList( devInfoHandle );
-                return( eErrorCode::Unknown );
-            }
-        }
-
-        PSP_INTERFACE_DEVICE_DETAIL_DATA pDevDetailData = (PSP_INTERFACE_DEVICE_DETAIL_DATA)HeapAlloc( GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, bufferSize );
-        if ( NULL == pDevDetailData )
-        {
-            if ( eOnErrorBehavior::Continue == OnErrorBehavior ) { continue; }
-            SetupDiDestroyDeviceInfoList( devInfoHandle );
-            return( eErrorCode::Memory );
-        }
-        pDevDetailData->cbSize = sizeof( SP_INTERFACE_DEVICE_DETAIL_DATA );
-
-        if ( SetupDiGetDeviceInterfaceDetail( devInfoHandle, &devInterfaceData, pDevDetailData, bufferSize, NULL, NULL ) == FALSE )
-        {
-            error = GetLastError();
-            if ( ERROR_INSUFFICIENT_BUFFER != error )
-            {
-                HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pDevDetailData);
-                if ( eOnErrorBehavior::Continue == OnErrorBehavior ) { continue; }
-                SetupDiDestroyDeviceInfoList( devInfoHandle );
-                return( eErrorCode::Unknown );
-            }
-        }
-
-        eErrorCode errorCode;
-        errorCode = eErrorCode::Unknown;
-        Callback.Function(Callback.Data, devInfoHandle, devInfoData, devInterfaceData, pDevDetailData, bufferSize, errorCode);
-
-        HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pDevDetailData);
-    }
-
-    SetupDiDestroyDeviceInfoList( devInfoHandle );
-
-    return( eErrorCode::None );
-}
-
-eErrorCode GetStorageAdapterProperty( HANDLE Handle, sStorageAdapterProperty& AdapterProperty )
+if (0 == ret)
 {
-    STORAGE_DESCRIPTOR_HEADER storageDescHeader;
-
-    STORAGE_PROPERTY_QUERY StorageProperty;
-    StorageProperty.PropertyId = StorageAdapterProperty;
-    StorageProperty.QueryType = PropertyStandardQuery;
-
-    DWORD bytesReturned;
-    DWORD ret =
-        DeviceIoControl(
-                        Handle,
-                        IOCTL_STORAGE_QUERY_PROPERTY,
-                        &StorageProperty,
-                        sizeof(STORAGE_PROPERTY_QUERY),
-                        &storageDescHeader,
-                        sizeof(STORAGE_DESCRIPTOR_HEADER),
-                        &bytesReturned,
-                        NULL
-                        );
-    if ( 0 == ret )
-    {
-        return( eErrorCode::Io );
-    }
-
-    if ( 0 == storageDescHeader.Size )
-    {
-        return( eErrorCode::Io );   //TODO: replace with more descriptive error
-    }
-
-    PSTORAGE_ADAPTER_DESCRIPTOR pstorageAdapterDesc = NULL;
-    pstorageAdapterDesc = (PSTORAGE_ADAPTER_DESCRIPTOR)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, storageDescHeader.Size);
-
-    ret =
-        DeviceIoControl(
-                        Handle,
-                        IOCTL_STORAGE_QUERY_PROPERTY,
-                        &StorageProperty,
-                        sizeof(STORAGE_PROPERTY_QUERY),
-                        pstorageAdapterDesc,
-                        storageDescHeader.Size,
-                        &bytesReturned,
-                        NULL
-                        );
-    if (0 == ret)
-    {
-        HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pstorageAdapterDesc);
-        return( eErrorCode::Io );
-    }
-
-    AdapterProperty.BusType = pstorageAdapterDesc->BusType;
-    //iAdapterProperty.SrbType = pstorageAdapterDesc->SrbType;  TODO check this
-    AdapterProperty.AlignmentMask = pstorageAdapterDesc->AlignmentMask;
-
     HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pstorageAdapterDesc);
+    return(eErrorCode::Io);
+}*/
 
-    return( eErrorCode::None );
-}
+//AdapterProperty.BusType = pstorageAdapterDesc->CommandProtocol;
 
-eErrorCode GetPhysicalDiskNumber(HANDLE Handle, U32& PhysicalDiskNumber)
-{
-    STORAGE_DEVICE_NUMBER storageDevice = { 0 };
-    DWORD bytesReturned;
-    DWORD ret =
-        DeviceIoControl(
-                        Handle,
-                        IOCTL_STORAGE_GET_DEVICE_NUMBER,
-                        NULL,
-                        0,
-                        &storageDevice,
-                        sizeof(storageDevice),
-                        &bytesReturned,
-                        NULL
-                        );
-    if (0 == ret)
-    {
-        return(eErrorCode::Io);
+//iAdapterProperty.SrbType = pstorageAdapterDesc->SrbType;  TODO check this
+//AdapterProperty.AlignmentMask = pstorageAdapterDesc->AlignmentMask;
+
+//HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pstorageAdapterDesc);
+
+
+//PSTORAGE_ADAPTER_DESCRIPTOR pstorageAdapterDesc = NULL;
+//pstorageAdapterDesc = (PSTORAGE_ADAPTER_DESCRIPTOR)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, storageDescHeader.Size);
+
+//ret =
+//    DeviceIoControl(
+//                    Handle,
+//                    IOCTL_STORAGE_QUERY_PROPERTY,
+//                    &StorageProperty,
+//                    sizeof(STORAGE_PROPERTY_QUERY),
+//                    pstorageAdapterDesc,
+//                    storageDescHeader.Size,
+//                    &bytesReturned,
+//                    NULL
+//                    );
+//if (0 == ret)
+//{
+//    HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pstorageAdapterDesc);
+//    return( eErrorCode::Io );
+//}
+
+//AdapterProperty.BusType = pstorageAdapterDesc->BusType;
+////iAdapterProperty.SrbType = pstorageAdapterDesc->SrbType;  TODO check this
+//AdapterProperty.AlignmentMask = pstorageAdapterDesc->AlignmentMask;
+
+//HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, pstorageAdapterDesc);
+
+        return(eErrorCode::None);
     }
 
-    PhysicalDiskNumber = storageDevice.DeviceNumber;
-    return(eErrorCode::None);
-}
-
-void CloseDeviceHandle(HANDLE& Handle)
-{
-    if (FALSE == CloseHandle(Handle))
+    eErrorCode GetPhysicalDiskNumber(HANDLE Handle, U32& PhysicalDiskNumber)
     {
-        //! TODO
-        //fprintf(stderr, "\nCloseDeviceHandle was not successful. Error Code: %d", GetLastError());
+        STORAGE_DEVICE_NUMBER storageDevice = { 0 };
+        DWORD bytesReturned;
+        DWORD ret =
+            DeviceIoControl(
+                Handle,
+                IOCTL_STORAGE_GET_DEVICE_NUMBER,
+                NULL,
+                0,
+                &storageDevice,
+                sizeof(storageDevice),
+                &bytesReturned,
+                NULL
+                );
+        if (0 == ret)
+        {
+            return(eErrorCode::Io);
+        }
+
+        PhysicalDiskNumber = storageDevice.DeviceNumber;
+        return(eErrorCode::None);
     }
-    Handle = INVALID_HANDLE_VALUE;
-}
 
-bool IsAtaDeviceBus( sStorageAdapterProperty StorageDeviceProperty )
-{
-    switch ( StorageDeviceProperty.BusType )
+    void CloseDeviceHandle(HANDLE& Handle)
     {
+        if (FALSE == CloseHandle(Handle))
+        {
+            //! TODO
+            //fprintf(stderr, "\nCloseDeviceHandle was not successful. Error Code: %d", GetLastError());
+        }
+        Handle = INVALID_HANDLE_VALUE;
+    }
+
+    bool IsAtaDeviceBus(sStorageAdapterProperty StorageDeviceProperty)
+    {
+        switch (StorageDeviceProperty.BusType)
+        {
+        case ProtocolTypeAta:
         case BusTypeAta:
         case BusTypeSata:
         {
-            return( true );
+            return(true);
         } break;
         default:
         {
-            return( false );
+            return(false);
         } break;
+        }
     }
-}
 
-bool IsScsiDeviceBus(sStorageAdapterProperty StorageDeviceProperty)
-{
-    switch (StorageDeviceProperty.BusType)
+    bool IsScsiDeviceBus(sStorageAdapterProperty StorageDeviceProperty)
     {
+        switch (StorageDeviceProperty.BusType)
+        {
         case BusTypeScsi:
         case BusTypeUsb:
         case BusTypeiScsi:
         {
-            return( true );
+            return(true);
         } break;
         default:
         {
-            return( false );
+            return(false);
         } break;
+        }
     }
-}
 
 }

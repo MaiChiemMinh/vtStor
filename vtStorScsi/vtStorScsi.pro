@@ -13,23 +13,24 @@ DEFINES += VTSTORSCSI_LIBRARY
 SOURCES += \
     CommandHandlerScsi.cpp \
     CommandDescriptorScsi.cpp \
+    vtStorScsi.cpp \
+    DriveScsiCommandExtensions.cpp \
     DriveScsi.cpp \
-    DriveEnumeratorScsi.cpp \
-    ScsiCommandExtensions.cpp
+    DriveEnumeratorScsi.cpp
 
 HEADERS += \
     CommandHandlerScsi.h \
     CommandDescriptorScsi.h \
+    vtStorScsi.h \
+    DriveScsiCommandExtensions.h \
     DriveScsi.h \
     DriveEnumeratorScsi.h \
-    ScsiCommandExtensions.h
+    Platform/Linux/vtStorScsiPlatformDefines.h
 
-INCLUDEPATH += "../Extern" "../vtStorScsiProtocol" "../vtStorScsiProtocol/Platform/Linux" "../vtStorScsi/Platform/Linux" "../Common" "../Common/Platform/x86x64" "../Common/Platform/x86x64/Linux" "../StorageUtility" "../StorageUtility/Linux" "../vtStor" "../vtStor/Platform/Linux"
+INCLUDEPATH += "../../vtStorScsiProtocol" "../../vtStorScsiProtocol/Platform/Linux" "../../vtStorScsi/Platform/Linux" "../../Common" "../../Common/Platform/x86x64" "../../Common/Platform/x86x64/Linux" "../../StorageUtility" "../../StorageUtility/Linux" "../../vtStor" "../../vtStor/Platform/Linux"
+
 
 CONFIG(debug, debug|release) {
-
-    DESTDIR = ../Build_vtStorScsi/Debug
-    OBJECTS_DIR = ../Build_vtStorScsi/Debug
 
     unix:!macx:!symbian: LIBS += -L$$PWD/../Build_StorageUtility/Debug/ -lStorageUtility
 
@@ -51,9 +52,6 @@ CONFIG(debug, debug|release) {
 
 CONFIG(release, debug|release) {
 
-    DESTDIR = ../Build_vtStorScsi/Release
-    OBJECTS_DIR = ../Build_vtStorScsi/Release
-
     unix:!macx:!symbian: LIBS += -L$$PWD/../Build_StorageUtility/Release/ -lStorageUtility
 
     INCLUDEPATH += $$PWD/../Build_StorageUtility/Release
@@ -72,5 +70,4 @@ CONFIG(release, debug|release) {
     DEPENDPATH += $$PWD/../Build_vtStorScsiProtocol/Release
 }
 
-OTHER_FILES += \
-    Common.props
+

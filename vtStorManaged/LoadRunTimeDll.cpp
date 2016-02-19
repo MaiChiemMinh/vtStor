@@ -26,9 +26,9 @@ namespace vtStor
 {
     namespace Managed
     {
-        cLoadRunTimeDll::cLoadRunTimeDll(System::String^ moduleName)
+        cLoadRunTimeDll::cLoadRunTimeDll(System::String^ DllPath)
         {
-            m_ModulePath = System::IO::Path::Combine(System::AppDomain::CurrentDomain->BaseDirectory, moduleName);
+            m_DllPath = DllPath;
         }
 
         cLoadRunTimeDll::~cLoadRunTimeDll()
@@ -42,13 +42,12 @@ namespace vtStor
         IRunTimeDll^ cLoadRunTimeDll::Load()
         {
             marshal_context context;
-            SetDllDirectory(NULL); // Restores the default search order.
-            HMODULE module = LoadLibrary(context.marshal_as<const TCHAR*>(m_ModulePath));
+            HMODULE module = LoadLibrary(context.marshal_as<const TCHAR*>(m_DllPath));
             if (NULL == module)
             {
-                throw gcnew System::Exception(System::String::Format("Failed to load '{0}'. Error code 0x{1:x}.", m_ModulePath, GetLastError()));
+                throw gcnew System::Exception(System::String::Format("Failed to load '{0}'. Error code 0x{1:x}.", m_DllPath, GetLastError()));
             }
-            return gcnew cRunTimeDll(module, m_ModulePath);
+            return gcnew cRunTimeDll(module);
         }
     }
 }

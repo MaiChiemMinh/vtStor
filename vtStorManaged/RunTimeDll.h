@@ -29,7 +29,7 @@ namespace vtStor
         public ref class cRunTimeDll : public IRunTimeDll
         {
         public:
-            cRunTimeDll(HMODULE Module, System::String^ ModulePath);
+            cRunTimeDll(HMODULE Module);
             ~cRunTimeDll();
 
         protected:
@@ -40,7 +40,6 @@ namespace vtStor
 
         private:
             HMODULE m_Module;
-            System::String^ m_ModulePath;
         };
     }
 }

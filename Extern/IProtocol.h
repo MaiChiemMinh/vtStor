@@ -26,9 +26,8 @@ limitations under the License.
 
 namespace vtStor
 {
-    class VTSTOR_API IProtocol
+    struct IProtocol
     {
-    public:
         virtual ~IProtocol() {}
         virtual eErrorCode IssueCommand(const DeviceHandle& Handle, std::shared_ptr<const IBuffer> Essense, std::shared_ptr<IBuffer> DataBuffer) = 0;
     };
@@ -40,6 +39,6 @@ extern "C"
     VT_STOR_SCSI_PROTOCOL_API void cScsiPassThrough_GetProtocol(std::shared_ptr<vtStor::IProtocol>& Protocol);
 }
 
-typedef void (OS_API * GetProtocolDelegate) (std::shared_ptr<vtStor::IProtocol>&);
+typedef void (WINAPIV * GetProtocolDelegate) (std::shared_ptr<vtStor::IProtocol>&);
 
 #endif // end __vtStorIProtocol_h__

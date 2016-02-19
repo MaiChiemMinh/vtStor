@@ -25,7 +25,7 @@ limitations under the License.
 
 namespace vtStor
 {
-    class cCommandHandlerScsi : public ICommandHandler
+    class VT_STOR_SCSI_API cCommandHandlerScsi : public ICommandHandler
     {
     public:
         cCommandHandlerScsi(std::shared_ptr<IProtocol> Protocol);

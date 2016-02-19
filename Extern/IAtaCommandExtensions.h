@@ -28,9 +28,8 @@ limitations under the License.
 
 namespace vtStor
 {
-    class VT_STOR_ATA_API IAtaCommandExtensions
+    struct IAtaCommandExtensions
     {
-    public:
         virtual ~IAtaCommandExtensions() {}
         virtual eErrorCode IssueCommand_IdentifyDevice(std::shared_ptr<IDrive> Drive, U32 CommandType, std::shared_ptr<IBuffer> Data) = 0;
         virtual eErrorCode IssueCommand_ReadDma(std::shared_ptr<IDrive> Drive, U32 CommandType, std::shared_ptr<IBuffer> Data, U32 Lba, U16 Count) = 0;
@@ -49,6 +48,6 @@ extern "C"
     VT_STOR_ATA_API void cAtaCommandExtensions_GetAtaCommandExtensions(std::unique_ptr<vtStor::IAtaCommandExtensions>& AtaCommandExtensions);
 }
 
-typedef void (OS_API * GetAtaCommandExtensionsDelegate) (std::unique_ptr<vtStor::IAtaCommandExtensions>&);
+typedef void (WINAPIV * GetAtaCommandExtensionsDelegate) (std::unique_ptr<vtStor::IAtaCommandExtensions>&);
 
 #endif // end __vtStorIAtaCommandExtensions_h__
