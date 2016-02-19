@@ -35,14 +35,16 @@ namespace vtStorManaged.Test
             cDriveManagerInterface driveManager;
             cDriveEnumeratorInterface driveEnumeratorAta;
             eErrorCode errorCode;
-            ILoadRunTimeDll vtStorUnifiedDll = new cLoadRunTimeDll("vtStorUnified.dll");
-            IRunTimeDll vtStorUnifiedModule = vtStorUnifiedDll.Load();
+            ILoadRunTimeDll vtStorDll = new cLoadRunTimeDll("vtStor.dll");
+            ILoadRunTimeDll vtStorAtaDll = new cLoadRunTimeDll("vtStorAta.dll");
+            IRunTimeDll vtStorModule = vtStorDll.Load();
+            IRunTimeDll vtStorAtaModule = vtStorAtaDll.Load();
 
             // Create an instance for DriveManager
-            driveManager = new cDriveManagerInterface(vtStorUnifiedModule);
+            driveManager = new cDriveManagerInterface(vtStorModule);
 
             // Create an instance for DriveEnumeratorAta
-            driveEnumeratorAta = new cDriveEnumeratorAta(vtStorUnifiedModule);
+            driveEnumeratorAta = new cDriveEnumeratorAta(vtStorAtaModule);
 
             // Register drive enumerator Ata
             driveManager.RegisterDriveEnumerator(driveEnumeratorAta);

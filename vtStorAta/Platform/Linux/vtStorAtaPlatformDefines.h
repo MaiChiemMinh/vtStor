@@ -15,23 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 </License>
 */
-#ifndef __vtStorIDevice_h__
-#define __vtStorIDevice_h__
+#ifndef __vtStorAtaPlatformDefines_h__
+#define __vtStorAtaPlatformDefines_h__
 
-#include <unordered_map>
+#ifdef VT_STOR_ATA_DLL_EXPORTS
+#define VT_STOR_ATA_API
+#else
+#define VT_STOR_ATA_API
+#endif
 
-#include "BasicTypes.h"
-#include "DeviceDataType.h"
-
-namespace vtStor
-{
-    struct IDevice
-    {
-        virtual ~IDevice() {}
-        virtual void Data(std::unordered_map<eDeviceDataType, void*>& Data) = 0;
-        virtual DeviceHandle Handle() = 0;
-        virtual void DevicePath(tchar*& DevicePath) = 0;
-    };
-}
-
-#endif // end __vtStorIDevice_h__
+#endif

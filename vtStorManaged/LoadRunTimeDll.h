@@ -39,7 +39,7 @@ namespace vtStor
             virtual IRunTimeDll^ Load();
 
         private:
-            System::String^ m_ModulePath;
+            System::String^ m_DllPath;
         };
     }
 }

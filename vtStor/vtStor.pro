@@ -14,25 +14,40 @@ QMAKE_CXXFLAGS += -fpermissive
 LIBS += -ludev
 
 SOURCES += \
+    vtStor.cpp \
+    ProtocolInterface.cpp \
     ProtocolEssense.cpp \
+    DriveManagerInterface.cpp \
     DriveManager.cpp \
+    DriveInterface.cpp \
+    DriveEnumeratorInterface.cpp \
     Drive.cpp \
+    CommandHandlerInterface.cpp \
     CommandDescriptor.cpp \
+    BufferInterface.cpp \
     BufferFormatter.cpp \
     Buffer.cpp
 
 HEADERS += \
+    vtStor.h \
+    ProtocolInterface.h \
     ProtocolEssense.h \
+    DriveManagerInterface.h \
     DriveManager.h \
+    DriveInterface.h \
+    DriveEnumeratorInterface.h \
     Drive.h \
+    CommandHandlerInterface.h \
     CommandDescriptor.h \
+    BufferInterface.h \
     BufferFormatter.h \
-    Buffer.h
+    Buffer.h \
+    Platform/Linux/vtStorPlatformDefines.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
     TARGET.UID3 = 0xE342FE1B
-    TARGET.CAPABILITY =
+    TARGET.CAPABILITY = 
     TARGET.EPOCALLOWDLLDATA = 1
     addFiles.sources = vtStor.dll
     addFiles.path = !:/sys/bin
@@ -48,15 +63,12 @@ unix:!symbian {
     INSTALLS += target
 }
 
-    INCLUDEPATH += "../StorageUtility/Linux" "../Common" "../Extern" "../Common/Platform/x86x64" "../Common/Platform/x86x64/Linux" "../vtStor/Platform/Linux" "../StorageUtility"
+    INCLUDEPATH += "../../StorageUtility/Linux" "../../Common" "../../Common/Platform/x86x64" "../../Common/Platform/x86x64/Linux" "../../vtStor/Platform/Linux" "../../StorageUtility"
 
     INCLUDEPATH += $$PWD/
     DEPENDPATH += $$PWD/
 
 CONFIG(release, debug|release) {
-
-    DESTDIR = ../Build_vtStor/Release
-    OBJECTS_DIR = ../Build_vtStor/Release
 
     unix:!macx:!symbian: LIBS += -L$$PWD/../Build_StorageUtility/Release/ -lStorageUtility
 
@@ -68,9 +80,6 @@ CONFIG(release, debug|release) {
 
 CONFIG(debug, debug|release) {
 
-    DESTDIR = ../Build_vtStor/Debug
-    OBJECTS_DIR = ../Build_vtStor/Debug
-
     unix:!macx:!symbian: LIBS += -L$$PWD/../Build_StorageUtility/Debug/ -lStorageUtility
 
     INCLUDEPATH += $$PWD/../Build_StorageUtility/Debug
@@ -78,6 +87,3 @@ CONFIG(debug, debug|release) {
 
     unix:!macx:!symbian: PRE_TARGETDEPS += $$PWD/../Build_StorageUtility/Debug/libStorageUtility.a
 }
-
-OTHER_FILES += \
-    Common.props

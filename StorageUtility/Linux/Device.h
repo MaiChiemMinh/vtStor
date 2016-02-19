@@ -1,6 +1,6 @@
 /*
 <License>
-Copyright 2016 Virtium Technology
+Copyright 2015 Virtium Technology
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ limitations under the License.
 #pragma once
 
 #include "DeviceDataType.h"
+#include "DeviceInterface.h"
 #include "ErrorCodes.h"
-#include "IDevice.h"
 
 namespace vtStor
 {
 
-class cDevice : public IDevice
+class cDevice : public cDeviceInterface
 {
 public:
     cDevice(String DevicePath, String SysDevicePath);

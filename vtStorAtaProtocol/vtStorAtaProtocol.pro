@@ -17,12 +17,13 @@ SOURCES += \
 
 HEADERS += \
     AtaProtocolEssense1.h \
+    Platform/Linux/vtStorAtaProtocolPlatformDefines.h \
     Platform/Linux/ProtocolAtaPassThrough.h
 
 symbian {
     MMP_RULES += EXPORTUNFROZEN
     TARGET.UID3 = 0xE701A033
-    TARGET.CAPABILITY =
+    TARGET.CAPABILITY = 
     TARGET.EPOCALLOWDLLDATA = 1
     addFiles.sources = vtStorAtaProtocol.dll
     addFiles.path = !:/sys/bin
@@ -38,13 +39,10 @@ unix:!symbian {
     INSTALLS += target
 }
 
-INCLUDEPATH += "../Extern" "../vtStorAtaProtocol/Platform/Linux" "../Common" "../Common/Platform/x86x64" "../Common/Platform/x86x64/Linux" "../StorageUtility" "../StorageUtility/Linux" "../vtStor" "../vtStor/Platform/Linux"
+INCLUDEPATH += "../../vtStorAtaProtocol/Platform/Linux" "../../Common" "../../Common/Platform/x86x64" "../../Common/Platform/x86x64/Linux" "../../StorageUtility" "../../StorageUtility/Linux" "../../vtStor" "../../vtStor/Platform/Linux"
 
 
 CONFIG(release, debug|release) {
-
-    DESTDIR = ../Build_vtStorAtaProtocol/Release
-    OBJECTS_DIR = ../Build_vtStorAtaProtocol/Release
 
     unix:!macx:!symbian: LIBS += -L$$PWD/../Build_StorageUtility/Release/ -lStorageUtility
 
@@ -60,9 +58,6 @@ CONFIG(release, debug|release) {
 }
 
 CONFIG(debug, debug|release) {
-
-    DESTDIR = ../Build_vtStorAtaProtocol/Debug
-    OBJECTS_DIR = ../Build_vtStorAtaProtocol/Debug
 
     unix:!macx:!symbian: LIBS += -L$$PWD/../Build_StorageUtility/Debug/ -lStorageUtility
 

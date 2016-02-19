@@ -19,8 +19,6 @@ limitations under the License.
 #define __DriveProperties_h__
 #pragma once
 
-#include <memory>
-
 #include "BasicTypes.h"
 
 namespace vtStor
@@ -30,8 +28,6 @@ namespace vtStor
         tchar*      DevicePath;
         vtStor::U32 PhysicalDiskNumber;
     };
-
-    VTSTOR_DLL_STL_IMPL(VTSTOR_API_EXPORT_IMPL template class VTSTOR_API std::shared_ptr<vtStor::sDriveProperties>);
 }
 
 #endif __DriveProperties_h__
